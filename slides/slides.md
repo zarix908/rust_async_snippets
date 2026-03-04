@@ -34,7 +34,19 @@ image: ./images/atlas.jpg
 
 # $ whoami
 
-<p>ATLAS storage TechLead</p>
+<ul>
+  <li>Tech Lead at <strong>ATLAS</strong></li>
+  <li>
+    Senior Go and Rust Developer
+    <ul>
+      <li>7 years of experience in Go</li>
+      <li>6 years of experience in Rust</li>
+    </ul>
+  </li>
+  <li>
+    Instructor at YSDA
+  </li>
+</ul>
 
 ---
 
@@ -333,6 +345,27 @@ pub trait Future {
 
 ---
 
+# Wake up problem
+
+```rust
+loop {
+    ...
+    thread::sleep(Duration::from_millis(100));
+}
+```
+```rust
+pub struct Context<'a> {
+    waker: &'a Waker,
+    local_waker: &'a LocalWaker,
+}
+```
+```rust
+impl Waker {
+    pub fn wake(self) {
+```
+
+---
+
 # Unification problem
 
 ```rust
@@ -601,6 +634,8 @@ layout: center
 # Compilation
 
 ---
+
+# 
 
 ---
 layout: center
