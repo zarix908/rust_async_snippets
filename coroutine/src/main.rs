@@ -4,10 +4,11 @@ use std::ops::{Coroutine, CoroutineState};
 use std::pin::Pin;
 
 fn main() {
-    let mut coroutine = #[coroutine] || {
+    let mut coroutine = #[coroutine]
+    || {
         yield 1;
         yield 25;
-        return "foo"
+        return "foo";
     };
 
     loop {
@@ -16,7 +17,7 @@ fn main() {
             CoroutineState::Complete(x) => {
                 println!("{}", x);
                 break;
-            },
+            }
         }
     }
 }
