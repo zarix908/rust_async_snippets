@@ -28,6 +28,14 @@ duration: 35min
 
 ---
 transition: fade-out
+layout: image-right
+image: ./images/atlas.jpg
+---
+
+# $ whoami
+
+<p>ATLAS storage TechLead</p>
+
 ---
 
 # Crawler
@@ -60,6 +68,11 @@ async fn crawl() {
 
 ---
 transition: fade-out
+layout: center
+---
+
+# \#\!\[forbid(async/await)\]
+
 ---
 
 # Future
@@ -90,6 +103,52 @@ Poll enum replacement
 pub enum FutureResult<T> {
     Pending,
     Ready(T),
+}
+```
+
+Non-blocking sleep function?
+
+---
+
+# Non-blocking Crawler - FutureResult
+
+Poll enum replacement
+
+```rust
+pub enum FutureResult<T> {
+    Pending,
+    Ready(T),
+}
+```
+```rust
+time::Instant::now() < self.deadline
+```
+
+---
+
+# Async time in Tokyo
+
+```rust {all|8|all}
+pub(crate) fn poll(&mut self, now: u64) -> Option<TimerHandle> {
+    loop {
+        if let Some(handle) = self.pending.pop_back() {
+            return Some(handle);
+        }
+
+        match self.next_expiration() {
+            Some(ref expiration) if expiration.deadline <= now => {
+                self.process_expiration(expiration);
+
+                self.set_elapsed(expiration.deadline);
+            }
+            _ => {
+                self.set_elapsed(now);
+                break;
+            }
+        }
+    }
+
+    self.pending.pop_back()
 }
 ```
 
@@ -150,6 +209,12 @@ impl StoringFuture {
     }
 }
 ```
+
+---
+layout: center
+---
+
+# Combine futures?
 
 ---
 
@@ -255,6 +320,58 @@ fn main() {
 ```
 
 ---
+
+# Any problem?
+
+```rust
+pub trait Future {
+    type Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output>;
+}
+```
+
+---
+
+# Unification problem
+
+```rust
+pub trait Future {
+    type Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output>;
+}
+```
+```rust
+fn poll(&mut self) -> FutureResult<()>
+fn poll(&mut self, mut page: &mut [u8]) -> FutureResult<()>
+fn poll(&mut self, page: &[u8]) -> FutureResult<()>
+```
+
+---
+
+# Unification problem - solution?
+
+```rust
+fn poll(&mut self) -> FutureResult<()>
+fn poll(&mut self, mut page: &mut [u8]) -> FutureResult<()>
+fn poll(&mut self, page: &[u8]) -> FutureResult<()>
+```
+```rust {all|1-4|6-11|all}
+struct FetchingPageFuture<'a> {
+    deadline: time::Instant,
+    page: &'a mut [u8]
+}
+
+struct CrawlFuture {
+    state: State,
+    fetching_page_fut: FetchingPageFuture<'?>, // what lifetime should we specify?
+    storing_db_fut: StoringFuture,
+    page: [u8; 16],
+}
+```
+
+---
 transition: fade-out
 ---
 
@@ -262,12 +379,17 @@ transition: fade-out
 
 The problem with self-referential data
 
-```rust {all|1-4|6-12|14-17|19-27|all}
+```rust
 pub struct SelfRef {
     value: String,
     value_ptr: *const String,
 }
+```
+---
 
+# Self-Referential Struct - Impl
+
+```rust {all|2-7|8-12|14-16|18-21|all}
 impl SelfRef {
     pub fn new(value: &str) -> Self {
         SelfRef {
@@ -286,8 +408,7 @@ impl SelfRef {
     }
 
     pub fn value_by_ptr(&self) -> &str {
-        assert!(!self.value_ptr.is_null(),
-            "SelfRef called without being set_ptr called first");
+        assert!(!self.value_ptr.is_null(), "SelfRef called without being set_ptr called first");
         unsafe { &*(self.value_ptr) }
     }
 }
@@ -327,7 +448,7 @@ fn main() {
 transition: slide-up
 ---
 
-# Pin Test - SelfRef with Pin
+# SelfRef with Pin
 
 Using Pin to prevent moves
 
