@@ -6,4 +6,5 @@ members = [
     "nonblocking_crawler", 
     "selfref", 
     "pin_test",
+    "hir",
 ]
