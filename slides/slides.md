@@ -373,6 +373,11 @@ struct CrawlFuture {
 
 ---
 transition: fade-out
+layout: center
+---
+
+# Self-Referential Struct and Pin
+
 ---
 
 # Self-Referential Struct - Definition
@@ -438,6 +443,12 @@ fn main() {
 }
 ```
 
+---
+
+# Swap result
+
+<img src="./images/swap_result.png" width="700px">
+
 <v-click>
 
 ⚠️ After swap, `value_by_ptr()` returns wrong value!
@@ -445,42 +456,49 @@ fn main() {
 </v-click>
 
 ---
-transition: slide-up
+
+# Swap problem
+
+<img src="./images/swap_problem.jpg" width="700px">
+
+---
+transition: fade-out
 ---
 
-# SelfRef with Pin
+# SelfRef with Pin - Definition
 
 Using Pin to prevent moves
 
-```rust {all|1-4|6-12|14-21|23-30|all}
+```rust
 pub struct SelfRef {
     value: String,
     value_ptr: *const String,
 }
+```
 
+---
+
+# SelfRef with Pin - Impl
+
+Using Pin to prevent moves
+
+```rust {all|6-11|15-19|all}
 impl SelfRef {
     pub fn new(value: &str) -> Self {
-        SelfRef {
-            value: String::from(value),
-            value_ptr: std::ptr::null(),
-        }
+        SelfRef { value: String::from(value), value_ptr: std::ptr::null() }
     }
 
     pub fn init(self: Pin<&mut Self>) {
         let value_ptr: *const String = &self.value;
-
         // SAFETY: the data will never move out of this reference in this function
         let this = unsafe { self.get_unchecked_mut() };
         this.value_ptr = value_ptr;
     }
 
-    pub fn value(&self) -> &str {
-        &self.value
-    }
+    pub fn value(&self) -> &str { &self.value }
 
     pub fn value_by_ptr(&self) -> &str {
-        assert!(!self.value_ptr.is_null(),
-            "SelfRef called without being set_ptr called first");
+        assert!(!self.value_ptr.is_null(), "SelfRef called without being set_ptr called first");
         unsafe { &*(self.value_ptr) }
     }
 }
@@ -488,11 +506,11 @@ impl SelfRef {
 
 ---
 
-# Pin Test - Usage
+# Pin - Usage
 
 Safe usage with Pin
 
-```rust {all|1-4|6-11|13|all}
+```rust {all|2-3|all}
 fn main() {
     let mut s1 = pin!(SelfRef::new("value1"));
     let mut s2 = pin!(SelfRef::new("value2"));
@@ -514,6 +532,61 @@ fn main() {
 }
 ```
 
+---
+
+# Pin - Macros
+
+```rust {all|5|all}
+pub macro pin($value:expr $(,)?) {
+    {
+        super let mut pinned = $value;
+        // SAFETY: The value is pinned: it is the local above which cannot be named outside this macro.
+        unsafe { $crate::pin::Pin::new_unchecked(&mut pinned) }
+    }
+}
+```
+
+---
+
+# Pin - Result?
+
+<img src="./images/pin_wrong_result.png" width="700px">
+
+<v-click>
+
+⚠️ Pin doesn't save you without Pin trait-marker
+
+</v-click>
+
+---
+
+# Pin - Unpin
+
+```rust
+pub const fn get_mut(self) -> &'a mut T
+where
+    T: Unpin,
+{
+    self.pointer
+}
+
+pub struct PhantomPinned;
+impl !Unpin for PhantomPinned {}
+```
+```rust
+pub struct SelfRef {
+    value: String,
+    value_ptr: *const String,
+    _marker: PhantomPinned,
+}
+```
+
+---
+
+# Pin - Correct usage
+
+<img src="./images/pin.png" width="550px">
+
 <v-click>
 
 ✅ Pin ensures the struct cannot be moved after initialization
@@ -521,26 +594,13 @@ fn main() {
 </v-click>
 
 ---
-transition: slide-up
+transition: fade-out
+layout: center
 ---
 
-# HIR - High-level Intermediate Representation
+# Compilation
 
-Simple async example for HIR analysis
-
-```rust {all|1-4|all}
-#[tokio::main]
-async fn main() {
-    let dur = Duration::from_secs(1);
-    sleep(dur).await;
-}
-```
-
-<v-click>
-
-This simple async code gets transformed by the compiler into a state machine (HIR/MIR)
-
-</v-click>
+---
 
 ---
 layout: center
