@@ -10,7 +10,7 @@ fn main() {
     let store_deadline = time::Instant::now().add(Duration::from_secs(6));
     let mut coroutines = Vec::new();
 
-    for i in 1..10000 {
+    for _ in 1..10000 {
         let coro = #[coroutine] || {
             loop {
                 if time::Instant::now() >= fetch_deadline {
